@@ -1,4 +1,4 @@
-name: helium-browser
+name: helium-browser # CHANGE THIS to your registered snap name
 base: core24
 version: '0.0.1' 
 summary: Private, fast, and honest web browser
@@ -8,29 +8,40 @@ description: |
 
 grade: stable
 confinement: strict
-license: GNU General Public License v3.0
-website: https://helium.computer
+license: GPL-3.0
+
+website: https://github.com/imputnet/helium-linux
 source-code: https://github.com/imputnet/helium-linux
 
+
+# Platforms will be injected automatically by main.yml
 
 apps:
   helium:
     command: helium
     extensions: [gnome]
+    # Full set of permissions for a modern browser
     plugs:
       - network
       - network-bind
       - audio-playback
-      - opengl
+      - audio-record          # Microphone support
+      - camera                # Webcam support
+      - opengl                # GPU Acceleration
       - x11
       - wayland
-      - browser-support
-      - removable-media
+      - browser-support       # Crucial for Chromium internal sandboxing
+      - removable-media       # Access USB drives
       - home
       - desktop
       - desktop-legacy
       - unity7
-      - camera
+      - screen-inhibit-control # Prevents sleep during video playback
+      - cups-control          # Printing support
+      - joystick              # Gamepad support
+      - password-manager-service # Gnome Keyring / KWallet integration
+      - u2f-devices           # YubiKey / Hardware security keys
+      - raw-usb               # Low-level USB access
 
 parts:
   helium:
@@ -38,11 +49,15 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
+    # Fix directory structure (move files from subdir to root)
     override-build: |
       craftctl default
       find $SNAPCRAFT_PART_INSTALL -mindepth 2 -maxdepth 2 -name "helium" -exec mv {}/../* $SNAPCRAFT_PART_INSTALL/ \;
       find $SNAPCRAFT_PART_INSTALL -type d -empty -delete
+
+    # The "Kitchen Sink" list for Chromium dependencies on Ubuntu 24.04 (Core24)
     stage-packages:
+      # Core Chromium Dependencies
       - libnss3
       - libnspr4
       - libasound2t64
@@ -50,7 +65,28 @@ parts:
       - xdg-utils
       - libgbm1
       - libgtk-3-0
+      - libx11-xcb1
+      - libxcb-dri3-0
+      - libatspi0
+      - libdrm2
+      
+      # Graphics & Hardware Acceleration (Vulkan/OpenGL)
       - libvulkan1
+      - mesa-vulkan-drivers
       - libgl1
       - libegl1
+      - libgl1-mesa-dri
+      
+      # Codecs and Media
+      - libffmpeg-nvenc-dev # Sometimes helps, though usually internal
+      
+      # Hardware Integration
       - libu2f-udev
+      - libpci3
+      
+      # Fonts (Crucial for rendering web pages correctly)
+      - fonts-noto
+      - fonts-noto-color-emoji
+      - fonts-liberation
+      - fontconfig
+      - libfontconfig1
