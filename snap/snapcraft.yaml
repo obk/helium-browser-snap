@@ -8,10 +8,12 @@ description: |
 grade: stable
 confinement: strict
 license: GPL-3.0-only AND BSD-3-Clause
+title: Helium Browser
 website: https://helium.computer
 source-code: https://github.com/imputnet/helium-linux
 issues: https://github.com/imputnet/helium-linux/issues
-
+contact: https://x.com/heliumbrowser
+donation: https://helium.computer/sponsor
 apps:
   helium:
     command: usr/bin/helium
