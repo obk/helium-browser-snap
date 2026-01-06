@@ -1,25 +1,21 @@
-name: helium-browser # CHANGE THIS to your registered snap name
+name: helium-browser # Change this to your registered snap name
 base: core24
 version: '0.0.1' 
 summary: Private, fast, and honest web browser based on Chromium
-description: |
-  Helium is a bullshit-free web browser based on Chromium.
-  It is designed to be fast, private, and honest.
+description: Helium is a bullshit-free web browser based on Chromium.
 
 grade: stable
 confinement: strict
-license: GPL-3.0-only AND BSD-3-Clause
+license: MPL-2.0
 
-website: https://github.com/imputnet/helium-linux
-source-code: https://github.com/imputnet/helium-linux
-issues: https://github.com/imputnet/helium-linux/issues
-
-# Platforms will be injected automatically by main.yml
+# Platforms are injected automatically by main.yml
 
 apps:
   helium:
+    # Calling our custom wrapper script located in usr/bin
     command: usr/bin/helium
     extensions: [gnome]
+    # Pointing explicitly to the desktop file
     desktop: usr/share/applications/helium.desktop
     common-id: helium.desktop
     plugs:
@@ -51,61 +47,49 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
-    # We need wget to download the icon manually
     build-packages:
       - wget
 
-    # --- FIXED BUILD LOGIC ---
+    # --- MANUAL BUILD SCRIPT (ENGLISH) ---
     override-build: |
       craftctl default
       
-      echo "Files are extracted. Configuring..."
+      echo "--- STARTING FILE ORGANIZATION ---"
       
-      # 1. Create necessary system directories
+      # 1. Create necessary system directories within the install target
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps
       
-      # 2. Download the official Icon
+      # 2. DOWNLOAD AND PLACE ICON (Guaranteed method)
+      # We download the raw PNG from the source repo directly to the pixmaps folder
       wget https://raw.githubusercontent.com/imputnet/helium/main/resources/branding/app_icon/raw.png -O $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps/helium.png
       
-      # 3. Setup Desktop File
-      # It might be at the root or already in a subdir, check and move
-      if [ -f "helium.desktop" ]; then
-        mv helium.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/
-      fi
+      # 3. CONFIGURE DESKTOP FILE
+      # Find the desktop file wherever it was extracted and move it to the correct path
+      find $SNAPCRAFT_PART_INSTALL -name "helium.desktop" -exec mv {} $SNAPCRAFT_PART_INSTALL/usr/share/applications/ \;
       
-      # Update the Desktop file to use our icon and correct command
-      DESKTOP_FILE="$SNAPCRAFT_PART_INSTALL/usr/share/applications/helium.desktop"
-      if [ -f "$DESKTOP_FILE" ]; then
-        sed -i 's|^Icon=.*|Icon=helium|g' "$DESKTOP_FILE"
-        sed -i 's|^Exec=.*|Exec=helium %U|g' "$DESKTOP_FILE"
-      fi
+      DESKTOP="$SNAPCRAFT_PART_INSTALL/usr/share/applications/helium.desktop"
+      # Force the Icon path and Exec command using sed
+      sed -i 's|^Icon=.*|Icon=helium|g' "$DESKTOP"
+      sed -i 's|^Exec=.*|Exec=helium %U|g' "$DESKTOP"
       
-      # 4. Setup Binary and Wrapper
-      # The binary is named 'chrome'. The wrapper is 'helium-wrapper'.
-      # We must NOT move 'chrome' because it needs resources.pak next to it.
+      # 4. WRITE LAUNCHER SCRIPT FROM SCRATCH
+      # The bundled wrapper is not suitable for Snap. We write a new one.
+      # The 'chrome' binary is the main executable.
       
-      if [ -f "helium-wrapper" ]; then
-        echo "Configuring wrapper..."
-        # Replace hardcoded /opt/helium/ paths with $SNAP/ (the installation root)
-        sed -i 's|/opt/helium/|$SNAP/|g' helium-wrapper
-        
-        # Move wrapper to /usr/bin/helium (this is what apps: command calls)
-        mv helium-wrapper $SNAPCRAFT_PART_INSTALL/usr/bin/helium
-      else
-        echo "Wrapper not found! Creating a simple fallback..."
-        # Fallback: Create a script that runs $SNAP/chrome
-        echo '#!/bin/sh' > $SNAPCRAFT_PART_INSTALL/usr/bin/helium
-        echo 'exec "$SNAP/chrome" "$@"' >> $SNAPCRAFT_PART_INSTALL/usr/bin/helium
-      fi
-
-      # 5. Set Permissions
+      cat <<EOF > $SNAPCRAFT_PART_INSTALL/usr/bin/helium
+      #!/bin/sh
+      # Execute the chrome binary using the Snap environment variables
+      exec "\$SNAP/chrome" "\$@"
+      EOF
+      
+      # 5. SET PERMISSIONS
       chmod +x $SNAPCRAFT_PART_INSTALL/usr/bin/helium
-      if [ -f "chrome" ]; then
-        chmod +x chrome
-      fi
-    # -------------------------
+      chmod +x $SNAPCRAFT_PART_INSTALL/chrome
+      
+      echo "--- ORGANIZATION COMPLETE ---"
+    # -----------------------------------
 
     stage-packages:
       - libgtk-3-0
