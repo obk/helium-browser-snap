@@ -1,6 +1,6 @@
-name: helium-browser 
-base: core22
-version: '0.0.1' # Bu kısım otomasyon ile güncellenecek
+name: helium-browser
+base: core24
+version: '0.0.1'
 summary: Private, fast, and honest web browser
 description: |
   Helium is a bullshit-free web browser based on Chromium.
@@ -22,20 +22,16 @@ apps:
       - wayland
       - browser-support
       - removable-media
-      - home
-      - desktop
-      - desktop-legacy
 
 parts:
   helium:
     plugin: dump
+    # The workflow will update this URL based on the architecture (x86 or arm)
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     stage-packages:
       - libnss3
       - libnspr4
-      - libasound2
+      - libasound2t64
       - libxss1
       - xdg-utils
-      - libgbm1
-      - libgtk-3-0
