@@ -1,8 +1,11 @@
-name: helium-browser
+name: helium-browser 
 base: core22
-version: '0.0.1' 
+version: '0.0.1' # Bu kısım otomasyon ile güncellenecek
 summary: Private, fast, and honest web browser
-description: Helium is a bullshit-free web browser based on Chromium.
+description: |
+  Helium is a bullshit-free web browser based on Chromium.
+  It is designed to be fast, private, and honest.
+
 grade: stable
 confinement: strict
 
@@ -19,6 +22,9 @@ apps:
       - wayland
       - browser-support
       - removable-media
+      - home
+      - desktop
+      - desktop-legacy
 
 parts:
   helium:
@@ -31,3 +37,5 @@ parts:
       - libasound2
       - libxss1
       - xdg-utils
+      - libgbm1
+      - libgtk-3-0
