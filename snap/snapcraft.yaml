@@ -1,35 +1,37 @@
 name: helium-browser # CHANGE THIS to your registered snap name
 base: core24
-version: '0.0.1' 
-summary: Private, fast, and honest web browser
+version: '0.0.1' # Updated automatically by the workflow
+summary: Private, fast, and honest web browser based on Chromium
 description: |
   Helium is a bullshit-free web browser based on Chromium.
   It is designed to be fast, private, and honest.
+  
+  Based on the AUR package: helium-browser-bin
 
 grade: stable
 confinement: strict
-license: GPL-3.0
+license: GPL-3.0-only AND BSD-3-Clause
 
 website: https://github.com/imputnet/helium-linux
 source-code: https://github.com/imputnet/helium-linux
+issues: https://github.com/imputnet/helium-linux/issues
 
-# Hardcoded platform for x86_64 only
-platforms:
-  amd64:
-    build-on: [amd64]
-    build-for: [amd64]
+# Platforms will be injected automatically by main.yml
 
 apps:
   helium:
+    # We point directly to the binary. The gnome extension handles the env vars.
     command: helium
     extensions: [gnome]
+    common-id: helium.desktop
+    # Plugs mapped from AUR depends/optdepends
     plugs:
       - network
       - network-bind
       - audio-playback
-      - audio-record
-      - camera
-      - opengl
+      - audio-record          # Microphone
+      - camera                # Webcam
+      - opengl                # GPU Acceleration (libva)
       - x11
       - wayland
       - browser-support
@@ -39,11 +41,12 @@ apps:
       - desktop-legacy
       - unity7
       - screen-inhibit-control
-      - cups-control
+      - cups-control          # Matches 'libcups'
       - joystick
-      - password-manager-service
+      - password-manager-service # Matches 'org.freedesktop.secrets' / 'kwallet'
       - u2f-devices
       - raw-usb
+      - upower-observe        # Matches 'upower' optdepend
 
 parts:
   helium:
@@ -51,34 +54,54 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
+    # Logic to handle the directory structure from the tarball
     override-build: |
       craftctl default
-      # Fix directory structure
+      # Move files from the versioned folder to the root
       find $SNAPCRAFT_PART_INSTALL -mindepth 2 -maxdepth 2 -name "helium" -exec mv {}/../* $SNAPCRAFT_PART_INSTALL/ \;
       find $SNAPCRAFT_PART_INSTALL -type d -empty -delete
+      
+      # Ensure the wrapper matches the binary name expected by Snapcraft
+      if [ -f "$SNAPCRAFT_PART_INSTALL/helium-wrapper" ]; then
+        chmod +x $SNAPCRAFT_PART_INSTALL/helium-wrapper
+      fi
 
+    # Dependencies mapped from AUR -> Ubuntu 24.04 (Core24)
     stage-packages:
+      # Core Deps (gtk3, nss, alsa, etc.)
+      - libgtk-3-0
       - libnss3
       - libnspr4
       - libasound2t64
       - libxss1
       - xdg-utils
+      - libcups2t64       # libcups
+      - libgcrypt20       # libgcrypt
+      - libpulse0         # libpulse
+      - libpci3           # pciutils
+      - libffi8           # libffi
+      
+      # Video Acceleration (libva)
+      - libva2
+      - libva-drm2
+      - libva-x11-2
+      - mesa-va-drivers
+      
+      # Chromium/Graphics specifics
       - libgbm1
-      - libgtk-3-0
-      - libx11-xcb1
-      - libxcb-dri3-0
-      - libatspi0t64
       - libdrm2
       - libvulkan1
       - mesa-vulkan-drivers
       - libgl1
       - libegl1
       - libgl1-mesa-dri
-      - libffmpeg-nvenc-dev 
-      - libu2f-udev
-      - libpci3
+      
+      # Fonts (ttf-liberation)
+      - fonts-liberation
       - fonts-noto
       - fonts-noto-color-emoji
-      - fonts-liberation
       - fontconfig
       - libfontconfig1
+      
+      # Hardware
+      - libu2f-udev

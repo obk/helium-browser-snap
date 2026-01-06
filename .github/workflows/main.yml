@@ -1,4 +1,4 @@
-name: Update and Build (x86 Only)
+name: Multi-Arch Build
 
 on:
   schedule:
@@ -7,8 +7,18 @@ on:
 
 jobs:
   build-publish:
-    name: Build x86_64
+    # Display name of the job
+    name: Build for ${{ matrix.snap_arch }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Configuration for x86_64
+          - snap_arch: amd64
+            file_arch: x86_64
+          # Configuration for ARM64 (aarch64)
+          - snap_arch: arm64
+            file_arch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -22,17 +32,26 @@ jobs:
         echo "Latest version: $VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    # 2. Configure snapcraft.yaml
+    # 2. Configure snapcraft.yaml for the specific architecture
     - name: Configure snapcraft.yaml
       run: |
         VER="${{ steps.check.outputs.version }}"
-        echo "Configuring -> Version: $VER"
+        ARCH="${{ matrix.snap_arch }}"
+        FILE="${{ matrix.file_arch }}"
+        
+        echo "Configuring -> Version: $VER, Platform: $ARCH"
 
         # Update the version line
         sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
         
-        # Update the source URL (Static x86_64 link)
-        LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-x86_64_linux.tar.xz"
+        # --- PLATFORM CONFIGURATION ---
+        # Crucial for building ARM on GitHub Actions (which are x86).
+        # We tell Snapcraft: "Run on amd64, but build for [target_arch]"
+        
+        sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [amd64]\n    build-for: [$ARCH]" snap/snapcraft.yaml
+        
+        # Update the source URL to match the architecture (x86_64 or arm64)
+        LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-${FILE}_linux.tar.xz"
         sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
         
         # Debug: Show the file content
