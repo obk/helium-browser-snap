@@ -11,6 +11,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: (DEBUG)
+      run: |
+        echo "Şu anki klasör:"
+        pwd
+        echo "Tüm dosyaların listesi:"
+        ls -R
     # 1. Check for the latest version on GitHub
     - name: Check Latest Version
       id: check
