@@ -5,7 +5,6 @@ summary: Private, fast, and honest web browser based on Chromium
 description: |
   Helium is a bullshit-free web browser based on Chromium.
   It is designed to be fast, private, and honest.
-  Based on the AUR package configuration.
 
 grade: stable
 confinement: strict
@@ -15,7 +14,7 @@ website: https://github.com/imputnet/helium-linux
 source-code: https://github.com/imputnet/helium-linux
 issues: https://github.com/imputnet/helium-linux/issues
 
-# Platforms are injected automatically by main.yml
+# Platforms will be injected automatically by main.yml
 
 apps:
   helium:
@@ -51,23 +50,25 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
-    # --- FIXED BUILD LOGIC ---
+    # --- FIXED LOGIC ---
     override-build: |
       craftctl default
       
-      echo "Listing extracted files for debugging..."
-      ls -F $SNAPCRAFT_PART_INSTALL
+      echo "Files are already extracted. Checking binary name..."
+      cd $SNAPCRAFT_PART_INSTALL
       
-      # The tarball extracts into a folder named like 'helium-0.7.9.1-x86_64_linux/'
-      # We move everything from that folder to the install root so Snapcraft can find 'helium'
-      cp -r $SNAPCRAFT_PART_INSTALL/helium-*_linux/* $SNAPCRAFT_PART_INSTALL/
+      # The binary comes named as 'chrome', but our app expects 'helium'
+      if [ -f "chrome" ]; then
+        echo "Renaming chrome to helium..."
+        mv chrome helium
+      fi
       
-      # Remove the duplicate directory to clean up
-      rm -rf $SNAPCRAFT_PART_INSTALL/helium-*_linux/
-      
-      # Make sure the binary is executable
-      chmod +x $SNAPCRAFT_PART_INSTALL/helium
-    # -------------------------
+      # Ensure permissions are correct
+      chmod +x helium
+      if [ -f "helium-wrapper" ]; then
+        chmod +x helium-wrapper
+      fi
+    # -------------------
 
     stage-packages:
       - libgtk-3-0
