@@ -14,6 +14,11 @@ source-code: https://github.com/imputnet/helium-linux
 issues: https://github.com/imputnet/helium-linux/issues
 contact: https://x.com/heliumbrowser
 donation: https://helium.computer/sponsor
+
+platforms:
+  amd64:
+  arm64:
+
 apps:
   helium:
     command: usr/bin/helium
@@ -62,37 +67,25 @@ parts:
       sed -i 's|^Exec=.*|Exec=helium %U|g' "$DESKTOP"
       cat <<EOF > $SNAPCRAFT_PART_INSTALL/usr/bin/helium
       #!/bin/sh
-      exec "\$SNAP/chrome" "\$@"
+      exec "\$SNAP/chrome" --no-sandbox --disable-dev-shm-usage "\$@"
       EOF
       chmod +x $SNAPCRAFT_PART_INSTALL/usr/bin/helium
       chmod +x $SNAPCRAFT_PART_INSTALL/chrome
     stage-packages:
-      - libgtk-3-0
       - libnss3
       - libnspr4
       - libasound2t64
-      - libxss1
-      - xdg-utils
       - libcups2t64
-      - libgcrypt20
-      - libpulse0
       - libpci3
-      - libffi8
+      - libu2f-udev
       - libva2
       - libva-drm2
       - libva-x11-2
       - mesa-va-drivers
-      - libgbm1
-      - libdrm2
       - libvulkan1
       - mesa-vulkan-drivers
-      - libgl1
-      - libegl1
-      - libgl1-mesa-dri
       - fonts-liberation
       - fonts-noto
       - fonts-noto-color-emoji
       - fontconfig
       - libfontconfig1
-      - libu2f-udev
-      - wget
