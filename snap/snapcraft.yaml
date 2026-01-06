@@ -1,12 +1,11 @@
 name: helium-browser # CHANGE THIS to your registered snap name
 base: core24
-version: '0.0.1' # Updated automatically by the workflow
+version: '0.0.1' 
 summary: Private, fast, and honest web browser based on Chromium
 description: |
   Helium is a bullshit-free web browser based on Chromium.
   It is designed to be fast, private, and honest.
-  
-  Based on the AUR package: helium-browser-bin
+  Based on the AUR package configuration.
 
 grade: stable
 confinement: strict
@@ -16,22 +15,20 @@ website: https://github.com/imputnet/helium-linux
 source-code: https://github.com/imputnet/helium-linux
 issues: https://github.com/imputnet/helium-linux/issues
 
-# Platforms will be injected automatically by main.yml
+# Platforms are injected automatically by main.yml
 
 apps:
   helium:
-    # We point directly to the binary. The gnome extension handles the env vars.
     command: helium
     extensions: [gnome]
     common-id: helium.desktop
-    # Plugs mapped from AUR depends/optdepends
     plugs:
       - network
       - network-bind
       - audio-playback
-      - audio-record          # Microphone
-      - camera                # Webcam
-      - opengl                # GPU Acceleration (libva)
+      - audio-record
+      - camera
+      - opengl
       - x11
       - wayland
       - browser-support
@@ -41,12 +38,12 @@ apps:
       - desktop-legacy
       - unity7
       - screen-inhibit-control
-      - cups-control          # Matches 'libcups'
+      - cups-control
       - joystick
-      - password-manager-service # Matches 'org.freedesktop.secrets' / 'kwallet'
+      - password-manager-service
       - u2f-devices
       - raw-usb
-      - upower-observe        # Matches 'upower' optdepend
+      - upower-observe
 
 parts:
   helium:
@@ -54,40 +51,40 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
-    # Logic to handle the directory structure from the tarball
+    # --- FIXED BUILD LOGIC ---
     override-build: |
       craftctl default
-      # Move files from the versioned folder to the root
-      find $SNAPCRAFT_PART_INSTALL -mindepth 2 -maxdepth 2 -name "helium" -exec mv {}/../* $SNAPCRAFT_PART_INSTALL/ \;
-      find $SNAPCRAFT_PART_INSTALL -type d -empty -delete
       
-      # Ensure the wrapper matches the binary name expected by Snapcraft
-      if [ -f "$SNAPCRAFT_PART_INSTALL/helium-wrapper" ]; then
-        chmod +x $SNAPCRAFT_PART_INSTALL/helium-wrapper
-      fi
+      echo "Listing extracted files for debugging..."
+      ls -F $SNAPCRAFT_PART_INSTALL
+      
+      # The tarball extracts into a folder named like 'helium-0.7.9.1-x86_64_linux/'
+      # We move everything from that folder to the install root so Snapcraft can find 'helium'
+      cp -r $SNAPCRAFT_PART_INSTALL/helium-*_linux/* $SNAPCRAFT_PART_INSTALL/
+      
+      # Remove the duplicate directory to clean up
+      rm -rf $SNAPCRAFT_PART_INSTALL/helium-*_linux/
+      
+      # Make sure the binary is executable
+      chmod +x $SNAPCRAFT_PART_INSTALL/helium
+    # -------------------------
 
-    # Dependencies mapped from AUR -> Ubuntu 24.04 (Core24)
     stage-packages:
-      # Core Deps (gtk3, nss, alsa, etc.)
       - libgtk-3-0
       - libnss3
       - libnspr4
       - libasound2t64
       - libxss1
       - xdg-utils
-      - libcups2t64       # libcups
-      - libgcrypt20       # libgcrypt
-      - libpulse0         # libpulse
-      - libpci3           # pciutils
-      - libffi8           # libffi
-      
-      # Video Acceleration (libva)
+      - libcups2t64
+      - libgcrypt20
+      - libpulse0
+      - libpci3
+      - libffi8
       - libva2
       - libva-drm2
       - libva-x11-2
       - mesa-va-drivers
-      
-      # Chromium/Graphics specifics
       - libgbm1
       - libdrm2
       - libvulkan1
@@ -95,13 +92,9 @@ parts:
       - libgl1
       - libegl1
       - libgl1-mesa-dri
-      
-      # Fonts (ttf-liberation)
       - fonts-liberation
       - fonts-noto
       - fonts-noto-color-emoji
       - fontconfig
       - libfontconfig1
-      
-      # Hardware
       - libu2f-udev
