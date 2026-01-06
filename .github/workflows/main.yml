@@ -1,0 +1,53 @@
+name: Auto Update and Build
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # Runs every day at 03:00 UTC
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # 1. Check for the latest version on GitHub
+    - name: Check Latest Version
+      id: check
+      run: |
+        # Fetch the latest tag from the API
+        LATEST_TAG=$(curl -s https://api.github.com/repos/imputnet/helium-linux/releases/latest | jq -r .tag_name)
+        # Remove the 'v' prefix (e.g., v0.7 -> 0.7)
+        VERSION=${LATEST_TAG#v}
+        echo "Latest version found: $VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    # 2. Update snapcraft.yaml with the new version and source URL
+    - name: Update snapcraft.yaml
+      run: |
+        VER="${{ steps.check.outputs.version }}"
+        
+        # Update the version line
+        sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
+        
+        # Construct the new download link and update the source line
+        LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-x86_64_linux.tar.xz"
+        sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
+        
+        echo "Updated snapcraft.yaml content:"
+        grep "version:" snap/snapcraft.yaml
+        grep "source:" snap/snapcraft.yaml
+
+    # 3. Build the Snap package
+    - name: Build Snap
+      uses: snapcore/action-build@v1
+      id: build
+
+    # 4. Publish to Snap Store
+    - name: Publish to Snap Store
+      uses: snapcore/action-publish@v1
+      env:
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      with:
+        snap: ${{ steps.build.outputs.snap }}
+        release: stable
