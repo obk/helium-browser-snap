@@ -43,9 +43,9 @@ jobs:
         # Update the version line
         sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
         
-        # --- FIXED SECTION ---
-        # build-on: [amd64] -> Always use amd64 (since GitHub runner is amd64)
-        # build-for: [$ARCH] -> But build the package for the target architecture
+        # --- PLATFORM INJECTION ---
+        # We enforce 'build-on: [amd64]' because GitHub Runners are Intel-based.
+        # We set 'build-for: [$ARCH]' to target the correct architecture (amd64 or arm64).
         
         sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [amd64]\n    build-for: [$ARCH]" snap/snapcraft.yaml
         
