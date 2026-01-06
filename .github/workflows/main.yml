@@ -22,35 +22,42 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # 1. Fetch the latest version number from the original repository
+    # 1. Fetch the latest version number
     - name: Check Latest Version
       id: check
       run: |
         LATEST_TAG=$(curl -s https://api.github.com/repos/imputnet/helium-linux/releases/latest | jq -r .tag_name)
-        VERSION=${LATEST_TAG#v} # Remove 'v' prefix
+        VERSION=${LATEST_TAG#v} 
         echo "Latest version: $VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    # 2. Modify snapcraft.yaml for the specific architecture
+    # 2. Configure snapcraft.yaml with 'platforms' (Core24 standard)
     - name: Configure snapcraft.yaml
       run: |
         VER="${{ steps.check.outputs.version }}"
         ARCH="${{ matrix.snap_arch }}"
         FILE="${{ matrix.file_arch }}"
         
-        echo "Configuring -> Version: $VER, Architecture: $ARCH"
+        echo "Configuring -> Version: $VER, Platform: $ARCH"
 
         # Update the version line
         sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
         
-        # Inject the architecture block after 'confinement: strict'
-        sed -i "/confinement: strict/a architectures: \n  - build-on: $ARCH\n    build-for: $ARCH" snap/snapcraft.yaml
+        # --- NEW CORE24 LOGIC ---
+        # Inject the 'platforms' block instead of 'architectures'
+        # Example output we want:
+        # platforms:
+        #   amd64:
+        #     build-on: [amd64]
+        #     build-for: [amd64]
         
-        # Update the source URL to point to the correct file (x86 or arm)
+        sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [$ARCH]\n    build-for: [$ARCH]" snap/snapcraft.yaml
+        
+        # Update the source URL
         LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-${FILE}_linux.tar.xz"
         sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
         
-        # Display the file content for debugging purposes
+        # Debug: Show the file
         cat snap/snapcraft.yaml
 
     # 3. Build the Snap package
