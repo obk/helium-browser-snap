@@ -13,6 +13,37 @@ license: GPL-3.0
 website: https://github.com/imputnet/helium-linux
 source-code: https://github.com/imputnet/helium-linux
 
+# Hardcoded platform for x86_64 only
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+
+apps:
+  helium:
+    command: helium
+    extensions: [gnome]
+    plugs:
+      - network
+      - network-bind
+      - audio-playback
+      - audio-record
+      - camera
+      - opengl
+      - x11
+      - wayland
+      - browser-support
+      - removable-media
+      - home
+      - desktop
+      - desktop-legacy
+      - unity7
+      - screen-inhibit-control
+      - cups-control
+      - joystick
+      - password-manager-service
+      - u2f-devices
+      - raw-usb
 
 parts:
   helium:
@@ -20,15 +51,13 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
-    # Fix directory structure (move files from subdir to root)
     override-build: |
       craftctl default
+      # Fix directory structure
       find $SNAPCRAFT_PART_INSTALL -mindepth 2 -maxdepth 2 -name "helium" -exec mv {}/../* $SNAPCRAFT_PART_INSTALL/ \;
       find $SNAPCRAFT_PART_INSTALL -type d -empty -delete
 
-    # The "Kitchen Sink" list for Chromium dependencies on Ubuntu 24.04 (Core24)
     stage-packages:
-      # Core Chromium Dependencies
       - libnss3
       - libnspr4
       - libasound2t64
@@ -38,24 +67,16 @@ parts:
       - libgtk-3-0
       - libx11-xcb1
       - libxcb-dri3-0
-      - libatspi0t64  # <--- UPDATED: 't64' suffix added for Core24
+      - libatspi0t64
       - libdrm2
-      
-      # Graphics & Hardware Acceleration (Vulkan/OpenGL)
       - libvulkan1
       - mesa-vulkan-drivers
       - libgl1
       - libegl1
       - libgl1-mesa-dri
-      
-      # Codecs and Media
       - libffmpeg-nvenc-dev 
-      
-      # Hardware Integration
       - libu2f-udev
       - libpci3
-      
-      # Fonts (Crucial for rendering web pages correctly)
       - fonts-noto
       - fonts-noto-color-emoji
       - fonts-liberation

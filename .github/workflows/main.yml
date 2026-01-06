@@ -1,4 +1,4 @@
-name: Multi-Arch Build
+name: Update and Build (x86 Only)
 
 on:
   schedule:
@@ -7,15 +7,8 @@ on:
 
 jobs:
   build-publish:
-    name: Build for ${{ matrix.snap_arch }}
+    name: Build x86_64
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - snap_arch: amd64
-            file_arch: x86_64
-          - snap_arch: arm64
-            file_arch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -29,26 +22,20 @@ jobs:
         echo "Latest version: $VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    # 2. Configure snapcraft.yaml (Core24 Compatible)
+    # 2. Configure snapcraft.yaml
     - name: Configure snapcraft.yaml
       run: |
         VER="${{ steps.check.outputs.version }}"
-        ARCH="${{ matrix.snap_arch }}"
-        FILE="${{ matrix.file_arch }}"
-        
-        echo "Configuring -> Version: $VER, Platform: $ARCH"
+        echo "Configuring -> Version: $VER"
 
-        # Update version
+        # Update the version line
         sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
         
-        # Inject platforms block (Core24 style)
-        sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [amd64]\n    build-for: [$ARCH]" snap/snapcraft.yaml
-        
-        # Update source URL
-        LINK="https://github.com/imputnet/helium-linux/releases/download/$VER/helium-$VER-${FILE}_linux.tar.xz"
+        # Update the source URL (Static x86_64 link)
+        LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-x86_64_linux.tar.xz"
         sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
         
-        # Debug
+        # Debug: Show the file content
         cat snap/snapcraft.yaml
 
     # 3. Build the Snap package
