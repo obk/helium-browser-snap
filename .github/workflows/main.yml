@@ -31,7 +31,7 @@ jobs:
         echo "Latest version: $VERSION"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    # 2. Configure snapcraft.yaml with 'platforms' (Core24 standard)
+    # 2. Configure snapcraft.yaml (Core24 Compatible)
     - name: Configure snapcraft.yaml
       run: |
         VER="${{ steps.check.outputs.version }}"
@@ -43,21 +43,17 @@ jobs:
         # Update the version line
         sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
         
-        # --- NEW CORE24 LOGIC ---
-        # Inject the 'platforms' block instead of 'architectures'
-        # Example output we want:
-        # platforms:
-        #   amd64:
-        #     build-on: [amd64]
-        #     build-for: [amd64]
+        # --- FIXED SECTION ---
+        # build-on: [amd64] -> Always use amd64 (since GitHub runner is amd64)
+        # build-for: [$ARCH] -> But build the package for the target architecture
         
-        sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [$ARCH]\n    build-for: [$ARCH]" snap/snapcraft.yaml
+        sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [amd64]\n    build-for: [$ARCH]" snap/snapcraft.yaml
         
         # Update the source URL
         LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-${FILE}_linux.tar.xz"
         sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
         
-        # Debug: Show the file
+        # Debug: Show the file content
         cat snap/snapcraft.yaml
 
     # 3. Build the Snap package
