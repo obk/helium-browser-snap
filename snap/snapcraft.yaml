@@ -14,35 +14,6 @@ website: https://github.com/imputnet/helium-linux
 source-code: https://github.com/imputnet/helium-linux
 
 
-# Platforms will be injected automatically by main.yml
-
-apps:
-  helium:
-    command: helium
-    extensions: [gnome]
-    # Full set of permissions for a modern browser
-    plugs:
-      - network
-      - network-bind
-      - audio-playback
-      - audio-record          # Microphone support
-      - camera                # Webcam support
-      - opengl                # GPU Acceleration
-      - x11
-      - wayland
-      - browser-support       # Crucial for Chromium internal sandboxing
-      - removable-media       # Access USB drives
-      - home
-      - desktop
-      - desktop-legacy
-      - unity7
-      - screen-inhibit-control # Prevents sleep during video playback
-      - cups-control          # Printing support
-      - joystick              # Gamepad support
-      - password-manager-service # Gnome Keyring / KWallet integration
-      - u2f-devices           # YubiKey / Hardware security keys
-      - raw-usb               # Low-level USB access
-
 parts:
   helium:
     plugin: dump
@@ -67,7 +38,7 @@ parts:
       - libgtk-3-0
       - libx11-xcb1
       - libxcb-dri3-0
-      - libatspi0
+      - libatspi0t64  # <--- UPDATED: 't64' suffix added for Core24
       - libdrm2
       
       # Graphics & Hardware Acceleration (Vulkan/OpenGL)
@@ -78,7 +49,7 @@ parts:
       - libgl1-mesa-dri
       
       # Codecs and Media
-      - libffmpeg-nvenc-dev # Sometimes helps, though usually internal
+      - libffmpeg-nvenc-dev 
       
       # Hardware Integration
       - libu2f-udev
