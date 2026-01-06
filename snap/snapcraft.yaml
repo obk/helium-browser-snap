@@ -1,4 +1,4 @@
-name: helium-browser # CHANGE THIS to your registered snap name
+name: helium-browser # Tescil ettiğin isim (örn: helium-tarayici)
 base: core24
 version: '0.0.1' 
 summary: Private, fast, and honest web browser based on Chromium
@@ -10,16 +10,15 @@ grade: stable
 confinement: strict
 license: GPL-3.0-only AND BSD-3-Clause
 
-website: https://github.com/imputnet/helium-linux
+website: https://helium.computer
 source-code: https://github.com/imputnet/helium-linux
 issues: https://github.com/imputnet/helium-linux/issues
 
-# Platforms will be injected automatically by main.yml
-
 apps:
   helium:
-    command: helium
+    command: usr/bin/helium
     extensions: [gnome]
+    desktop: usr/share/applications/helium.desktop
     common-id: helium.desktop
     plugs:
       - network
@@ -50,25 +49,25 @@ parts:
     source: https://github.com/imputnet/helium-linux/releases/latest
     source-type: tar
     
-    # --- FIXED LOGIC ---
     override-build: |
       craftctl default
-      
-      echo "Files are already extracted. Checking binary name..."
-      cd $SNAPCRAFT_PART_INSTALL
-      
-      # The binary comes named as 'chrome', but our app expects 'helium'
-      if [ -f "chrome" ]; then
-        echo "Renaming chrome to helium..."
-        mv chrome helium
+      cp -r $SNAPCRAFT_PART_INSTALL/helium-*_linux/* $SNAPCRAFT_PART_INSTALL/
+      rm -rf $SNAPCRAFT_PART_INSTALL/helium-*_linux/
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps
+      wget https://raw.githubusercontent.com/imputnet/helium/main/resources/branding/app_icon/raw.png -O $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps/helium.png
+      cp $SNAPCRAFT_PART_INSTALL/helium.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/
+      sed -i 's|^Icon=.*|Icon=helium|g' $SNAPCRAFT_PART_INSTALL/usr/share/applications/helium.desktop
+      sed -i 's|^Exec=.*|Exec=helium %U|g' $SNAPCRAFT_PART_INSTALL/usr/share/applications/helium.desktop
+      if [ -f "$SNAPCRAFT_PART_INSTALL/helium-wrapper" ]; then
+        sed -i 's|/opt/helium/||g' $SNAPCRAFT_PART_INSTALL/helium-wrapper
+        mv $SNAPCRAFT_PART_INSTALL/helium-wrapper $SNAPCRAFT_PART_INSTALL/usr/bin/helium
+      else
+        mv $SNAPCRAFT_PART_INSTALL/chrome $SNAPCRAFT_PART_INSTALL/usr/bin/helium
       fi
-      
-      # Ensure permissions are correct
-      chmod +x helium
-      if [ -f "helium-wrapper" ]; then
-        chmod +x helium-wrapper
-      fi
-    # -------------------
+      chmod +x $SNAPCRAFT_PART_INSTALL/chrome || true
+      chmod +x $SNAPCRAFT_PART_INSTALL/usr/bin/helium
 
     stage-packages:
       - libgtk-3-0
