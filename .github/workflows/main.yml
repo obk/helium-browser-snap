@@ -2,8 +2,8 @@ name: Multi-Arch Build
 
 on:
   schedule:
-    - cron: '0 3 * * *' # Runs every day at 03:00 UTC
-  workflow_dispatch: # Allows manual triggering
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   build-publish:
@@ -23,7 +23,6 @@ jobs:
     - name: Check Latest Version
       id: check
       run: |
-        # Fetch tag from GitHub API
         LATEST_TAG=$(curl -s https://api.github.com/repos/imputnet/helium-linux/releases/latest | jq -r .tag_name)
         VERSION=${LATEST_TAG#v} 
         echo "Latest version: $VERSION"
@@ -34,20 +33,10 @@ jobs:
         VER="${{ steps.check.outputs.version }}"
         ARCH="${{ matrix.snap_arch }}"
         FILE="${{ matrix.file_arch }}"
-        
-        echo "Configuring -> Version: $VER, Platform: $ARCH"
-
-        # Update version in yaml
         sed -i "s/version: .*/version: '$VER'/" snap/snapcraft.yaml
-        
-        # Inject platform configuration (force build on amd64 for both targets)
         sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [amd64]\n    build-for: [$ARCH]" snap/snapcraft.yaml
-        
-        # Construct download link and update source
-        LINK="https://github.com/imputnet/helium-linux/releases/download/$VER/helium-$VER-${FILE}_linux.tar.xz"
+        LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-${FILE}_linux.tar.xz"
         sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
-        
-        # Debug output
         cat snap/snapcraft.yaml
 
     - name: Build Snap
