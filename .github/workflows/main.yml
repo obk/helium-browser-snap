@@ -1,4 +1,4 @@
-name: Multi-Arch Build (English)
+name: Multi-Arch Build
 
 on:
   schedule:
