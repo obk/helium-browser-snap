@@ -51,7 +51,7 @@ jobs:
         sed -i "/confinement: strict/a platforms:\n  $ARCH:\n    build-on: [amd64]\n    build-for: [$ARCH]" snap/snapcraft.yaml
         
         # Update the source URL to match the architecture (x86_64 or arm64)
-        LINK="https://github.com/imputnet/helium-linux/releases/download/v$VER/helium-$VER-${FILE}_linux.tar.xz"
+        LINK="https://github.com/imputnet/helium-linux/releases/download/$VER/helium-$VER-${FILE}_linux.tar.xz"
         sed -i "s|source: .*|source: $LINK|" snap/snapcraft.yaml
         
         # Debug: Show the file content
